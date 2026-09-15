@@ -20,11 +20,11 @@ jobs:
 
       - name: Package
         run: |
-          cd build/SimpleVerb_artefacts/Release
+          cd build/SimpleVerb_artefacts
           zip -r SimpleVerb-macOS.zip AU VST3 Standalone
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: SimpleVerb-macOS
-          path: build/SimpleVerb_artefacts/Release/SimpleVerb-macOS.zip
+          path: build/SimpleVerb_artefacts/SimpleVerb-macOS.zip
