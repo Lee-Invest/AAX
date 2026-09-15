@@ -4,11 +4,18 @@ namespace
 {
     constexpr int knobWidth = 84, knobHeight = 90, contentWidth = 760;
     int cursorX = 0;
+    int currentRowHeight = 0;
 }
 
 void BrightonRigAudioProcessorEditor::addSectionLabel(const juce::String& text)
 {
-    cursorX = 0;
+    if (cursorX != 0)
+    {
+        layoutCursorY += currentRowHeight;
+        cursorX = 0;
+        currentRowHeight = 0;
+    }
+
     layoutCursorY += 8;
 
     auto label = std::make_unique<juce::Label>();
@@ -26,9 +33,11 @@ void BrightonRigAudioProcessorEditor::addKnob(const juce::String& paramID, const
 {
     if (cursorX + knobWidth > contentWidth)
     {
+        layoutCursorY += currentRowHeight;
         cursorX = 0;
-        layoutCursorY += knobHeight;
+        currentRowHeight = 0;
     }
+    currentRowHeight = juce::jmax(currentRowHeight, knobHeight);
 
     auto knob = std::make_unique<Knob>();
     knob->slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
@@ -52,9 +61,11 @@ void BrightonRigAudioProcessorEditor::addToggle(const juce::String& paramID, con
 {
     if (cursorX + 110 > contentWidth)
     {
+        layoutCursorY += currentRowHeight;
         cursorX = 0;
-        layoutCursorY += 30;
+        currentRowHeight = 0;
     }
+    currentRowHeight = juce::jmax(currentRowHeight, 30);
 
     auto toggle = std::make_unique<Toggle>();
     toggle->button.setButtonText(labelText);
@@ -169,7 +180,7 @@ BrightonRigAudioProcessorEditor::BrightonRigAudioProcessorEditor(BrightonRigAudi
     addKnob(ParamIDs::outputGain, "Output Gain");
     addKnob(ParamIDs::dryWet, "Dry/Wet");
 
-    layoutCursorY += knobHeight + 20;
+    layoutCursorY += currentRowHeight + 20;
     content.setSize(contentWidth, layoutCursorY);
 
     viewport.setViewedComponent(&content, false);
