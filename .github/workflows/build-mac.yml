@@ -28,3 +28,17 @@ jobs:
         with:
           name: SimpleVerb-macOS
           path: build/SimpleVerb_artefacts/SimpleVerb-macOS.zip
+
+      - name: Publish build to dist branch
+        run: |
+          mkdir -p /tmp/dist-branch
+          cp build/SimpleVerb_artefacts/SimpleVerb-macOS.zip /tmp/dist-branch/
+          cd /tmp/dist-branch
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b dist-macos
+          git add SimpleVerb-macOS.zip
+          git commit -q -m "macOS build ${{ github.sha }}"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push -q -f origin dist-macos
