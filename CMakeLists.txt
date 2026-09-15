@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SimpleVerb VERSION 1.0.0)
+project(BrightonRig VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,58 +15,58 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(JUCE)
 
 # --- AAX support (optional) -------------------------------------------------
-# AAX requires Avid's AAX SDK, which is only available through a free Avid
-# Developer account (https://developer.avid.com). It cannot be redistributed
-# here. Once you have it, point AAX_SDK_PATH at the SDK root (the folder that
-# contains "Interfaces") either via -DAAX_SDK_PATH=... on the cmake command
-# line, or by setting the environment variable below, and re-run cmake.
-# AAX plugins also require signing with a PACE Anti-Piracy developer account
-# (wraptool) before Pro Tools will load them.
+# Requires Avid's AAX SDK (free Avid Developer account, https://developer.avid.com)
+# and PACE signing before Pro Tools will load an AAX build. Not needed for the
+# VST3/AU path used with wrappers like MetaPlugin.
 if(NOT AAX_SDK_PATH AND DEFINED ENV{AAX_SDK_PATH})
     set(AAX_SDK_PATH $ENV{AAX_SDK_PATH})
 endif()
 
-set(SIMPLEVERB_FORMATS VST3 Standalone)
+set(BRIGHTONRIG_FORMATS VST3 Standalone)
 if(APPLE)
-    list(APPEND SIMPLEVERB_FORMATS AU)
+    list(APPEND BRIGHTONRIG_FORMATS AU)
 endif()
 if(AAX_SDK_PATH)
     juce_set_aax_sdk_path(${AAX_SDK_PATH})
-    list(APPEND SIMPLEVERB_FORMATS AAX)
-    message(STATUS "AAX SDK found at ${AAX_SDK_PATH} - AAX target enabled")
-else()
-    message(STATUS "AAX_SDK_PATH not set - building VST3/AU/Standalone only. "
-                    "See README.md for how to enable AAX once you have the SDK.")
+    list(APPEND BRIGHTONRIG_FORMATS AAX)
 endif()
 
-juce_add_plugin(SimpleVerb
+juce_add_plugin(BrightonRig
     COMPANY_NAME "YourCompany"
     PLUGIN_MANUFACTURER_CODE Ycmp
-    PLUGIN_CODE Svrb
-    FORMATS ${SIMPLEVERB_FORMATS}
-    PRODUCT_NAME "SimpleVerb"
+    PLUGIN_CODE Brtg
+    FORMATS ${BRIGHTONRIG_FORMATS}
+    PRODUCT_NAME "Brighton Rig"
     IS_SYNTH FALSE
-    NEEDS_MIDI_INPUT FALSE
+    NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
-    VST3_CATEGORIES "Fx" "Reverb"
-    AAX_CATEGORY "AAX_ePlugInCategory_Reverb"
+    VST3_CATEGORIES "Fx" "Distortion"
+    AAX_CATEGORY "AAX_ePlugInCategory_Modulation"
     COPY_PLUGIN_AFTER_BUILD TRUE
 )
 
-target_sources(SimpleVerb PRIVATE
+target_sources(BrightonRig PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
+    Source/DSP/NoiseGate.cpp
+    Source/DSP/TrebleBooster.cpp
+    Source/DSP/AmpStage.cpp
+    Source/DSP/CabinetMic.cpp
+    Source/DSP/ModDelayVerb.cpp
+    Source/Presets.cpp
 )
 
-target_compile_definitions(SimpleVerb PUBLIC
+target_include_directories(BrightonRig PRIVATE Source)
+
+target_compile_definitions(BrightonRig PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
 )
 
-target_link_libraries(SimpleVerb PRIVATE
+target_link_libraries(BrightonRig PRIVATE
     juce::juce_audio_utils
     juce::juce_dsp
     juce::juce_audio_processors

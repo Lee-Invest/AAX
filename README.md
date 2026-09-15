@@ -1,50 +1,38 @@
-# SimpleVerb
+# Brighton Rig
 
-A basic reverb audio plugin built with [JUCE](https://juce.com), targeting VST3
-(and AU on macOS) now, with AAX wired in as an optional target for later.
+A guitar amp/effects plugin (JUCE, VST3/AU, AAX-ready) built around a
+Vox AC30-style amp, treble-booster, Deacy-style blend amp, cabinet/mic
+section, modulation, delay (including a dedicated Brighton-Rock stereo
+wet/dry/wet mode) and reverb — inspired by the classic Brian May / Queen
+guitar tone. No guitar modeling is included; it processes an external
+guitar signal. Original branding/UI; no official endorsement implied.
 
-## Parameters
-- Room Size, Damping, Wet Level, Dry Level, Width, Freeze Mode
+This is a v1 "core tone chain" build: functional signal chain, full
+parameter set, factory presets, and a usable (not yet fully animated)
+control UI. Planned follow-ups: spectrum analyzer, tuner, MIDI Learn,
+A/B/snapshots, animated signal-flow graphics, independent multi-amp
+(AC30 A/B) routing.
 
-## Building (VST3 / Standalone)
-
-Requirements: CMake 3.22+, a C++17 compiler, and (on Linux) the usual JUCE
-dependency packages (ALSA/X11/etc. dev headers).
+## Building
 
 ```sh
 cmake -B build
 cmake --build build --config Release -j
 ```
 
-The build downloads JUCE automatically via CMake FetchContent (requires
-internet access on first configure). Build output:
-- VST3: `build/SimpleVerb_artefacts/Release/VST3/SimpleVerb.vst3`
-- Standalone app: `build/SimpleVerb_artefacts/Release/Standalone/`
-- AU (macOS only): `build/SimpleVerb_artefacts/Release/AU/SimpleVerb.component`
+Output:
+- VST3: `build/BrightonRig_artefacts/Release/VST3/Brighton Rig.vst3`
+- AU (macOS only): `build/BrightonRig_artefacts/Release/AU/Brighton Rig.component`
+- Standalone: `build/BrightonRig_artefacts/Release/Standalone/`
 
-**Important:** a plugin built on Linux produces a Linux VST3, one built on
-Windows produces a Windows VST3, and one built on macOS produces a macOS
-VST3/AU. To use it in your DAW, build on (or for) the same OS you run your
-DAW on.
-
-To install: copy the `.vst3` file into your system's VST3 folder
-(`~/.vst3` on Linux, `C:\Program Files\Common Files\VST3` on Windows,
-`~/Library/Audio/Plug-Ins/VST3` on macOS), then rescan plugins in your DAW.
+Install VST3 to `~/.vst3` (Linux), `C:\Program Files\Common Files\VST3` (Windows),
+or `~/Library/Audio/Plug-Ins/VST3` (macOS); AU to
+`~/Library/Audio/Plug-Ins/Components` (macOS).
 
 ## Enabling AAX (Pro Tools)
 
-AAX requires two things this project can't include:
-1. **Avid AAX SDK** — free with an Avid Developer account at
-   https://developer.avid.com. Download it, then configure this project with:
-   ```sh
-   cmake -B build -DAAX_SDK_PATH=/path/to/AAX_SDK
-   ```
-   AAX will then be built alongside VST3 automatically.
-2. **PACE signing** — Pro Tools refuses to load unsigned AAX plugins. After
-   building, sign the AAX bundle with `wraptool` using your PACE Anti-Piracy
-   developer credentials before copying it into
-   `/Library/Application Support/Avid/Audio/Plug-Ins` (macOS) or
-   `C:\Program Files\Common Files\Avid\Audio\Plug-Ins` (Windows).
-
-No source code changes are needed to go from VST3-only to VST3+AAX — just
-supply the SDK path and sign the result.
+Requires Avid's free Developer account (AAX SDK) and PACE signing — see
+`-DAAX_SDK_PATH=...`. No source changes needed once the SDK is available.
+Alternatively, load the VST3 in Pro Tools via a VST-to-AAX wrapper such as
+MetaPlugin (universal arm64+x86_64 binaries are built for macOS to support
+this regardless of whether the host is running under Rosetta).
