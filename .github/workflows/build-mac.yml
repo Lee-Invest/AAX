@@ -1,0 +1,30 @@
+name: Build macOS Plugin
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/dreamy-feynman-7q4awm
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Package
+        run: |
+          cd build/SimpleVerb_artefacts/Release
+          zip -r SimpleVerb-macOS.zip AU VST3 Standalone
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SimpleVerb-macOS
+          path: build/SimpleVerb_artefacts/Release/SimpleVerb-macOS.zip
