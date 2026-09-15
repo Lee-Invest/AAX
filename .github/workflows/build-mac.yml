@@ -6,6 +6,9 @@ on:
     branches:
       - claude/dreamy-feynman-7q4awm
 
+permissions:
+  contents: write
+
 jobs:
   build-mac:
     runs-on: macos-latest
