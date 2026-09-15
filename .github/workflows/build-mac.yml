@@ -21,10 +21,25 @@ jobs:
       - name: Build
         run: cmake --build build --config Release -j
 
+      - name: Re-sign with ad-hoc signature
+        run: |
+          codesign --force --deep -s - build/SimpleVerb_artefacts/AU/SimpleVerb.component
+          codesign --force --deep -s - build/SimpleVerb_artefacts/VST3/SimpleVerb.vst3
+          codesign --force --deep -s - build/SimpleVerb_artefacts/Standalone/SimpleVerb.app
+          codesign -dv --verbose=2 build/SimpleVerb_artefacts/Standalone/SimpleVerb.app
+
       - name: Package
         run: |
           cd build/SimpleVerb_artefacts
-          zip -r SimpleVerb-macOS.zip AU VST3 Standalone
+          ditto -c -k --sequesterRsrc --keepParent AU/SimpleVerb.component AU-SimpleVerb.zip
+          ditto -c -k --sequesterRsrc --keepParent VST3/SimpleVerb.vst3 VST3-SimpleVerb.zip
+          ditto -c -k --sequesterRsrc --keepParent Standalone/SimpleVerb.app Standalone-SimpleVerb.zip
+          mkdir -p package/AU package/VST3 package/Standalone
+          mv AU-SimpleVerb.zip package/AU/
+          mv VST3-SimpleVerb.zip package/VST3/
+          mv Standalone-SimpleVerb.zip package/Standalone/
+          cd package
+          zip -r ../SimpleVerb-macOS.zip .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
