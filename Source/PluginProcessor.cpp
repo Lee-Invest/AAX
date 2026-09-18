@@ -137,6 +137,8 @@ void BrightonRigAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     if (*apvts.getRawParameterValue(bypass) > 0.5f)
         return;
 
+    inputLevel.store(buffer.getMagnitude(0, buffer.getNumSamples()));
+
     juce::AudioBuffer<float> dryBuffer;
     dryBuffer.makeCopyOf(buffer);
 
@@ -234,9 +236,17 @@ void BrightonRigAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
         for (int i = 0; i < buffer.getNumSamples(); ++i)
         {
             float mixed = dry[i] * (1.0f - wet) + out[i] * wet;
-            out[i] = std::isfinite(mixed) ? juce::jlimit(-4.0f, 4.0f, mixed) : 0.0f;
+            if (!std::isfinite(mixed))
+                mixed = 0.0f;
+            // Final safety limiter: the amp/cabinet/fx chain can produce peaks
+            // well above 0dBFS depending on settings (measured up to ~3.4x with
+            // some presets); soft-clip rather than let a wrapper host or audio
+            // interface hard-clip or protectively mute on overload.
+            out[i] = std::tanh(mixed * 0.5f) * 2.0f;
         }
     }
+
+    outputLevel.store(buffer.getMagnitude(0, buffer.getNumSamples()));
 }
 
 void BrightonRigAudioProcessor::loadPreset(int index)

@@ -3,7 +3,8 @@
 #include "PluginProcessor.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 
-class BrightonRigAudioProcessorEditor : public juce::AudioProcessorEditor
+class BrightonRigAudioProcessorEditor : public juce::AudioProcessorEditor,
+                                         private juce::Timer
 {
 public:
     explicit BrightonRigAudioProcessorEditor(BrightonRigAudioProcessor&);
@@ -11,6 +12,7 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() override;
+    void timerCallback() override;
 
 private:
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
@@ -45,6 +47,8 @@ private:
     juce::ComboBox presetBox;
     juce::TextButton bypassButton { "Bypass" };
     std::unique_ptr<ButtonAttachment> bypassAttachment;
+
+    juce::Label inputMeterLabel, outputMeterLabel;
 
     int layoutCursorY = 0;
 

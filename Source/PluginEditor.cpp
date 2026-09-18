@@ -187,8 +187,33 @@ BrightonRigAudioProcessorEditor::BrightonRigAudioProcessorEditor(BrightonRigAudi
     viewport.setScrollBarsShown(true, false);
     addAndMakeVisible(viewport);
 
+    inputMeterLabel.setText("In: --", juce::dontSendNotification);
+    inputMeterLabel.setColour(juce::Label::textColourId, juce::Colours::lightgreen);
+    inputMeterLabel.setFont(juce::Font(13.0f, juce::Font::bold));
+    addAndMakeVisible(inputMeterLabel);
+
+    outputMeterLabel.setText("Out: --", juce::dontSendNotification);
+    outputMeterLabel.setColour(juce::Label::textColourId, juce::Colours::lightgreen);
+    outputMeterLabel.setFont(juce::Font(13.0f, juce::Font::bold));
+    addAndMakeVisible(outputMeterLabel);
+
     setSize(800, 640);
     setResizable(true, true);
+    startTimerHz(15);
+}
+
+void BrightonRigAudioProcessorEditor::timerCallback()
+{
+    auto toDbText = [](float mag, const char* prefix)
+    {
+        juce::String text(prefix);
+        if (mag <= 0.00001f)
+            return text + ": -inf dB";
+        return text + ": " + juce::String(juce::Decibels::gainToDecibels(mag), 1) + " dB";
+    };
+
+    inputMeterLabel.setText(toDbText(processor.inputLevel.load(), "In"), juce::dontSendNotification);
+    outputMeterLabel.setText(toDbText(processor.outputLevel.load(), "Out"), juce::dontSendNotification);
 }
 
 void BrightonRigAudioProcessorEditor::paint(juce::Graphics& g)
@@ -205,6 +230,8 @@ void BrightonRigAudioProcessorEditor::resized()
     auto top = area.removeFromTop(40);
     presetBox.setBounds(top.removeFromRight(260).reduced(6));
     bypassButton.setBounds(top.removeFromRight(90).reduced(4));
+    outputMeterLabel.setBounds(top.removeFromRight(110).reduced(4));
+    inputMeterLabel.setBounds(top.removeFromRight(110).reduced(4));
 
     viewport.setBounds(area);
     content.setSize(contentWidth, content.getHeight());
