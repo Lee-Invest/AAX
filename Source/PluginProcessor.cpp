@@ -96,6 +96,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout BrightonRigAudioProcessor::c
     addFloat(reverbDamping, "Reverb Damping", 0.0f, 1.0f, 0.5f);
     addFloat(reverbWet, "Reverb Wet", 0.0f, 1.0f, 0.25f);
 
+    addBool(simpleMode, "Simple Mode (bypass gate/booster/cabinet/fx)", true);
     addFloat(inputGain, "Input Gain", -24.0f, 24.0f, 0.0f);
     addFloat(outputGain, "Output Gain", -24.0f, 24.0f, 0.0f);
     addFloat(dryWet, "Dry/Wet", 0.0f, 1.0f, 1.0f);
@@ -147,13 +148,15 @@ void BrightonRigAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     const float inGain = juce::Decibels::decibelsToGain(apvts.getRawParameterValue(inputGain)->load());
     block.multiplyBy(inGain);
 
-    if (*apvts.getRawParameterValue(gateOn) > 0.5f)
+    const bool simple = *apvts.getRawParameterValue(simpleMode) > 0.5f;
+
+    if (!simple && *apvts.getRawParameterValue(gateOn) > 0.5f)
     {
         gate.setParameters(apvts.getRawParameterValue(gateThreshold)->load(), 2.0f, 120.0f);
         gate.process(block);
     }
 
-    if (*apvts.getRawParameterValue(boosterOn) > 0.5f)
+    if (!simple && *apvts.getRawParameterValue(boosterOn) > 0.5f)
     {
         booster.setParameters(apvts.getRawParameterValue(boosterBoost)->load(),
                                apvts.getRawParameterValue(boosterTone)->load(),
@@ -182,15 +185,23 @@ void BrightonRigAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     ap.deacyDrive = apvts.getRawParameterValue(deacyDrive)->load();
     ap.deacyTone = apvts.getRawParameterValue(deacyTone)->load();
     ap.deacyVolume = apvts.getRawParameterValue(deacyVolume)->load();
+    if (simple)
+    {
+        ap.overdriveDrive = 0.0f;
+        ap.deacyBlend = 0.0f;
+    }
     amp.setParameters(ap);
     amp.process(block);
 
-    cabinet.setCabinet(*apvts.getRawParameterValue(cabOpenBack) > 0.5f, apvts.getRawParameterValue(cabResonance)->load());
-    CabinetMic::MicParams micA, micB;
-    micA.type = CabinetMic::MicType::SM57;
-    micB.type = CabinetMic::MicType::MD441;
-    cabinet.setMics(micA, micB, apvts.getRawParameterValue(micABlend)->load());
-    cabinet.process(block);
+    if (!simple)
+    {
+        cabinet.setCabinet(*apvts.getRawParameterValue(cabOpenBack) > 0.5f, apvts.getRawParameterValue(cabResonance)->load());
+        CabinetMic::MicParams micA, micB;
+        micA.type = CabinetMic::MicType::SM57;
+        micB.type = CabinetMic::MicType::MD441;
+        cabinet.setMics(micA, micB, apvts.getRawParameterValue(micABlend)->load());
+        cabinet.process(block);
+    }
 
     ModDelayVerb::Params fxp;
     fxp.phaserOn = *apvts.getRawParameterValue(phaserOn) > 0.5f;
@@ -222,6 +233,12 @@ void BrightonRigAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     fxp.reverbSize = apvts.getRawParameterValue(reverbSize)->load();
     fxp.reverbDamping = apvts.getRawParameterValue(reverbDamping)->load();
     fxp.reverbWet = apvts.getRawParameterValue(reverbWet)->load();
+    if (simple)
+    {
+        fxp.phaserOn = fxp.chorusOn = fxp.wahOn = fxp.fuzzOn = fxp.delayOn = false;
+        fxp.reverbOn = false;
+        fxp.reverbWet = 0.0f;
+    }
     fx.setParameters(fxp);
     fx.process(block);
 

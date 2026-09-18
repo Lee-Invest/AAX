@@ -99,6 +99,9 @@ BrightonRigAudioProcessorEditor::BrightonRigAudioProcessorEditor(BrightonRigAudi
     layoutCursorY = 0;
     cursorX = 0;
 
+    addSectionLabel("Simple Mode (bypasses everything below except the amp) — turn OFF to use gate/booster/cabinet/effects");
+    addToggle(ParamIDs::simpleMode, "Simple Mode");
+
     addSectionLabel("Noise Gate");
     addToggle(ParamIDs::gateOn, "Gate On");
     addKnob(ParamIDs::gateThreshold, "Threshold");

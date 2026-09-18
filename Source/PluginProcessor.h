@@ -90,6 +90,7 @@ namespace ParamIDs
     static const juce::String reverbWet = "reverbWet";
 
     // Global
+    static const juce::String simpleMode = "simpleMode";
     static const juce::String inputGain = "inputGain";
     static const juce::String outputGain = "outputGain";
     static const juce::String dryWet = "dryWet";
