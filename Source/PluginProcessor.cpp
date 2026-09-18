@@ -232,7 +232,10 @@ void BrightonRigAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
         auto* out = buffer.getWritePointer(ch);
         auto* dry = dryBuffer.getReadPointer(ch);
         for (int i = 0; i < buffer.getNumSamples(); ++i)
-            out[i] = dry[i] * (1.0f - wet) + out[i] * wet;
+        {
+            float mixed = dry[i] * (1.0f - wet) + out[i] * wet;
+            out[i] = std::isfinite(mixed) ? juce::jlimit(-4.0f, 4.0f, mixed) : 0.0f;
+        }
     }
 }
 
