@@ -45,7 +45,11 @@ void CabinetMic::configureMicFilter(juce::dsp::IIR::Coefficients<float>::Ptr& co
     const float angleAttenDb = juce::jmap(m.angle01, 0.0f, 10.0f);
     const float positionTiltDb = juce::jmap(m.position01, -4.0f, 4.0f); // edge (dark) -> center (bright)
 
-    coeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
+    // Mutate the existing shared Coefficients object in place. ProcessorDuplicator
+    // wires its internal per-channel filters to this object once, at prepare() time;
+    // reseating `coeffs` to point at a brand-new object instead would silently
+    // orphan those filters (they'd keep using the old, empty default coefficients).
+    *coeffs = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(
         sampleRate, presenceFreq, 0.9f,
         juce::Decibels::decibelsToGain(presenceGainDb + positionTiltDb - angleAttenDb));
 
@@ -72,8 +76,6 @@ void CabinetMic::process(juce::dsp::AudioBlock<float>& block)
     if (!micA.enabled && !micB.enabled)
         return;
 
-    juce::dsp::AudioBlock<float> blockA(block);
-    juce::HeapBlock<char> heapA, heapB;
     juce::AudioBuffer<float> bufA((int) block.getNumChannels(), (int) block.getNumSamples());
     juce::AudioBuffer<float> bufB((int) block.getNumChannels(), (int) block.getNumSamples());
 

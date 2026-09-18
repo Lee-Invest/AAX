@@ -118,26 +118,34 @@ void AmpStage::process(juce::dsp::AudioBlock<float>& block)
         }
     }
 
-    // Deacy-style low-gain amp blended in for that thick, dark rhythm layer
+    // Deacy-style low-gain amp blended in for that thick, dark rhythm layer.
+    // Must operate on an actual copy of the audio, not another AudioBlock over
+    // the same memory (AudioBlock is a lightweight view, not an owning buffer) —
+    // otherwise the "wet" and "dry" signals below would be the same aliased data.
     if (params.deacyBlend > 0.001f)
     {
-        juce::dsp::AudioBlock<float> deacyBlock(block);
+        juce::AudioBuffer<float> deacyBuffer((int) numChannels, (int) numSamples);
+        for (size_t ch = 0; ch < numChannels; ++ch)
+            deacyBuffer.copyFrom((int) ch, 0, block.getChannelPointer(ch), (int) numSamples);
+
         for (size_t ch = 0; ch < numChannels; ++ch)
         {
-            auto* data = deacyBlock.getChannelPointer(ch);
+            auto* data = deacyBuffer.getWritePointer((int) ch);
             for (size_t i = 0; i < numSamples; ++i)
             {
                 float x = data[i] * juce::jmap(params.deacyDrive, 0.5f, 3.0f);
                 data[i] = std::tanh(x) * params.deacyVolume;
             }
         }
+
+        juce::dsp::AudioBlock<float> deacyBlock(deacyBuffer);
         juce::dsp::ProcessContextReplacing<float> deacyCtx(deacyBlock);
         deacyTone.process(deacyCtx);
 
         for (size_t ch = 0; ch < numChannels; ++ch)
         {
             auto* dry = block.getChannelPointer(ch);
-            auto* wet = deacyBlock.getChannelPointer(ch);
+            auto* wet = deacyBuffer.getReadPointer((int) ch);
             for (size_t i = 0; i < numSamples; ++i)
                 dry[i] = dry[i] * (1.0f - params.deacyBlend) + wet[i] * params.deacyBlend;
         }
